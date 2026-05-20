@@ -70,13 +70,10 @@ export function HomePage() {
       ) : (
         <ul className="space-y-3">
           {workoutsWithMeta.map(({ workout, lastDate }) => (
-            <li
-              key={workout.id}
-              className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
-            >
+            <li key={workout.id}>
               <Link
                 to={`/treino/${workout.id}`}
-                className="flex min-w-0 flex-1 items-center gap-4 p-4 active:bg-slate-50 dark:active:bg-slate-800"
+                className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 active:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:active:bg-slate-800"
               >
                 <span
                   className={`h-12 w-1.5 shrink-0 rounded-full ${workoutAccent(workout.color)}`}
@@ -90,13 +87,6 @@ export function HomePage() {
                   </p>
                 </div>
                 <span className="text-slate-400 dark:text-slate-500">›</span>
-              </Link>
-              <Link
-                to={`/treino/${workout.id}/editar`}
-                aria-label={`Editar ${workout.name}`}
-                className="mr-3 shrink-0 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-semibold text-slate-600 dark:border-slate-600 dark:text-slate-400"
-              >
-                Editar
               </Link>
             </li>
           ))}
