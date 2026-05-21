@@ -1,3 +1,6 @@
+import type { WeightUnit } from './weight'
+import { displayToKg, kgToDisplay } from './weight'
+
 export interface ExerciseDraft {
   id?: number
   name: string
@@ -18,29 +21,36 @@ export function createEmptyExercise(): ExerciseDraft {
   return { name: '', targetSets: '3', targetReps: '10', defaultWeightKg: '' }
 }
 
-export function exerciseToDraft(ex: {
-  id?: number
-  name: string
-  targetSets: number
-  targetReps?: string | number
-  defaultWeightKg?: number
-}): ExerciseDraft {
+export function exerciseToDraft(
+  ex: {
+    id?: number
+    name: string
+    targetSets: number
+    targetReps?: string | number
+    defaultWeightKg?: number
+  },
+  weightUnit: WeightUnit = 'kg',
+): ExerciseDraft {
   const reps =
     typeof ex.targetReps === 'number'
       ? String(ex.targetReps)
       : (ex.targetReps?.trim() || '10')
+
+  const kg = ex.defaultWeightKg ?? 0
 
   return {
     id: ex.id,
     name: ex.name,
     targetSets: String(ex.targetSets),
     targetReps: reps,
-    defaultWeightKg:
-      (ex.defaultWeightKg ?? 0) > 0 ? String(ex.defaultWeightKg) : '',
+    defaultWeightKg: kg > 0 ? String(kgToDisplay(kg, weightUnit)) : '',
   }
 }
 
-export function parseExerciseDrafts(drafts: ExerciseDraft[]): ParsedExercise[] {
+export function parseExerciseDrafts(
+  drafts: ExerciseDraft[],
+  weightUnit: WeightUnit = 'kg',
+): ParsedExercise[] {
   return drafts
     .map((ex) => {
       const exName = ex.name.trim()
@@ -48,7 +58,11 @@ export function parseExerciseDrafts(drafts: ExerciseDraft[]): ParsedExercise[] {
 
       const targetSets = parseInt(ex.targetSets, 10)
       const targetReps = ex.targetReps.trim()
-      const defaultWeightKg = parseFloat((ex.defaultWeightKg || '0').replace(',', '.'))
+      const weightDisplay = parseFloat((ex.defaultWeightKg || '0').replace(',', '.'))
+      const defaultWeightKg = displayToKg(
+        Number.isNaN(weightDisplay) ? 0 : weightDisplay,
+        weightUnit,
+      )
 
       if (
         Number.isNaN(targetSets) ||

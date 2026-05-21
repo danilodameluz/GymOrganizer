@@ -1,19 +1,18 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { RestTimer } from '../components/RestTimer'
-import { SetLogForm } from '../components/SetLogForm'
+import { ExerciseSessionCard } from '../components/ExerciseSessionCard'
 import { db } from '../db/database'
-import { useRestTimer } from '../hooks/useRestTimer'
+import { useSettings } from '../context/SettingsContext'
+import { useWakeLock } from '../hooks/useWakeLock'
 import type { Exercise, SetLog } from '../types'
-import { formatTargetReps, getDefaultRepFromTarget } from '../utils/exercise'
 
 export function SessionPage() {
   const { id } = useParams<{ id: string }>()
   const sessionId = Number(id)
   const navigate = useNavigate()
   const [activeExerciseId, setActiveExerciseId] = useState<number | null>(null)
-  const timer = useRestTimer(90)
+  const { keepScreenOn } = useSettings()
 
   const session = useLiveQuery(() => db.sessions.get(sessionId), [sessionId])
   const workout = useLiveQuery(
@@ -37,6 +36,9 @@ export function SessionPage() {
     [sessionId],
   )
 
+  const sessionActive = session != null && session.finishedAt == null
+  useWakeLock(keepScreenOn && sessionActive)
+
   const finishWorkout = async () => {
     await db.sessions.update(sessionId, { finishedAt: new Date() })
     navigate('/historico')
@@ -56,8 +58,6 @@ export function SessionPage() {
       reps,
       loggedAt: new Date(),
     })
-
-    timer.start(90)
   }
 
   if (!session || !workout || !exercises) {
@@ -93,83 +93,21 @@ export function SessionPage() {
         <p className="text-sm text-slate-500 dark:text-slate-400">Registre cada série</p>
       </header>
 
-      <RestTimer
-        secondsLeft={timer.secondsLeft}
-        isRunning={timer.isRunning}
-        onStart={timer.start}
-        onStop={timer.stop}
-      />
-
       <div className="space-y-4">
-        {exercises.map((exercise) => {
-          const exerciseLogs = logsByExercise[exercise.id!] ?? []
-          const isOpen = activeExerciseId === exercise.id
-          const lastLog = exerciseLogs[exerciseLogs.length - 1]
-          const nextSet = exerciseLogs.length + 1
-          const canLogMore = exerciseLogs.length < exercise.targetSets
-
-          return (
-            <div
-              key={exercise.id}
-              className="overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
-            >
-              <button
-                type="button"
-                onClick={() =>
-                  setActiveExerciseId(isOpen ? null : (exercise.id ?? null))
-                }
-                className="flex w-full items-center justify-between px-4 py-3 text-left"
-              >
-                <div>
-                  <p className="font-semibold text-slate-900 dark:text-white">{exercise.name}</p>
-                  <p className="text-xs text-slate-500">
-                    {exerciseLogs.length}/{exercise.targetSets} séries · meta{' '}
-                    {formatTargetReps(exercise.targetReps)} reps
-                    {(exercise.defaultWeightKg ?? 0) > 0 &&
-                      ` · ${exercise.defaultWeightKg} kg`}
-                  </p>
-                </div>
-                <span className="text-slate-400 dark:text-slate-500">{isOpen ? '▲' : '▼'}</span>
-              </button>
-
-              {exerciseLogs.length > 0 && (
-                <ul className="border-t border-slate-200 px-4 py-2 dark:border-slate-800">
-                  {exerciseLogs.map((log) => (
-                    <li
-                      key={log.id}
-                      className="flex justify-between py-1 text-sm text-slate-500 dark:text-slate-400"
-                    >
-                      <span>Série {log.setNumber}</span>
-                      <span className="font-mono text-slate-700 dark:text-slate-300">
-                        {log.weightKg} kg × {log.reps}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              {isOpen && canLogMore && (
-                <div className="border-t border-slate-200 p-4 dark:border-slate-800">
-                  <SetLogForm
-                    setNumber={nextSet}
-                    defaultWeight={exercise.defaultWeightKg ?? 0}
-                    defaultReps={getDefaultRepFromTarget(exercise.targetReps)}
-                    repsHint={formatTargetReps(exercise.targetReps)}
-                    lastWeight={lastLog?.weightKg}
-                    lastReps={lastLog?.reps}
-                    onSubmit={(w, r) => logSet(exercise, w, r)}
-                  />
-                </div>
-              )}
-
-              {isOpen && !canLogMore && (
-                <p className="border-t border-slate-200 px-4 py-3 text-center text-sm text-emerald-600 dark:border-slate-800 dark:text-emerald-400">
-                  Todas as {exercise.targetSets} séries registradas
-                </p>
-              )}
-            </div>
-          )
-        })}
+        {exercises.map((exercise) => (
+          <ExerciseSessionCard
+            key={exercise.id}
+            exercise={exercise}
+            logs={logsByExercise[exercise.id!] ?? []}
+            isOpen={activeExerciseId === exercise.id}
+            onToggle={() =>
+              setActiveExerciseId(
+                activeExerciseId === exercise.id ? null : (exercise.id ?? null),
+              )
+            }
+            onLogSet={logSet}
+          />
+        ))}
       </div>
     </div>
   )

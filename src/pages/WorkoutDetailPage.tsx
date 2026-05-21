@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ConfirmDialog } from '../components/ConfirmDialog'
+import { useSettings } from '../context/SettingsContext'
 import { db } from '../db/database'
 import { deleteWorkout, hasActiveSession } from '../db/workoutService'
 import { formatExercisePlan } from '../utils/exercise'
@@ -14,6 +15,7 @@ export function WorkoutDetailPage() {
   const navigate = useNavigate()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const { weightUnit } = useSettings()
 
   const workout = useLiveQuery(() => db.workouts.get(workoutId), [workoutId])
   const exercises = useLiveQuery(
@@ -97,7 +99,7 @@ export function WorkoutDetailPage() {
             className="rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900"
           >
             <p className="font-medium text-slate-800 dark:text-slate-200">{ex.name}</p>
-            <p className="mt-0.5 text-sm text-slate-500">{formatExercisePlan(ex)}</p>
+            <p className="mt-0.5 text-sm text-slate-500">{formatExercisePlan(ex, weightUnit)}</p>
           </li>
         ))}
       </ul>

@@ -1,4 +1,6 @@
 import type { Exercise } from '../types'
+import type { WeightUnit } from './weight'
+import { formatWeight } from './weight'
 
 export function formatTargetReps(targetReps: string | number | undefined): string {
   if (targetReps == null) return '10'
@@ -14,9 +16,9 @@ export function getDefaultRepFromTarget(targetReps: string | number | undefined)
   return Number.isNaN(n) || n < 1 ? 10 : n
 }
 
-export function formatExercisePlan(ex: Exercise): string {
+export function formatExercisePlan(ex: Exercise, unit: WeightUnit = 'kg'): string {
   const reps = formatTargetReps(ex.targetReps)
   const weightKg = ex.defaultWeightKg ?? 0
-  const weight = weightKg > 0 ? `${weightKg} kg` : 'peso livre'
+  const weight = weightKg > 0 ? formatWeight(weightKg, unit) : 'peso livre'
   return `${ex.targetSets} séries · ${reps} reps · ${weight}`
 }

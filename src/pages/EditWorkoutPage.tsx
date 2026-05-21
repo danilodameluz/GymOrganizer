@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { WorkoutForm } from '../components/WorkoutForm'
+import { useSettings } from '../context/SettingsContext'
 import { db } from '../db/database'
 import { updateWorkout } from '../db/workoutService'
 import { exerciseToDraft } from '../utils/workoutForm'
@@ -9,6 +10,7 @@ export function EditWorkoutPage() {
   const { id } = useParams<{ id: string }>()
   const workoutId = Number(id)
   const navigate = useNavigate()
+  const { weightUnit } = useSettings()
 
   const data = useLiveQuery(async () => {
     const workout = await db.workouts.get(workoutId)
@@ -54,7 +56,7 @@ export function EditWorkoutPage() {
         key={workout.id}
         initialName={workout.name}
         initialColor={workout.color}
-        initialExercises={exercises.map(exerciseToDraft)}
+        initialExercises={exercises.map((ex) => exerciseToDraft(ex, weightUnit))}
         submitLabel="Salvar alterações"
         onSubmit={async (name, color, parsed) => {
           await updateWorkout(workoutId, name, color, parsed)

@@ -1,5 +1,7 @@
 import { useState } from 'react'
+import { useSettings } from '../context/SettingsContext'
 import { workoutColorOptions } from '../utils/colors'
+import { weightFieldLabel } from '../utils/weight'
 import {
   createEmptyExercise,
   parseExerciseDrafts,
@@ -27,6 +29,7 @@ export function WorkoutForm({
   submitLabel,
   onSubmit,
 }: WorkoutFormProps) {
+  const { weightUnit } = useSettings()
   const [name, setName] = useState(initialName)
   const [color, setColor] = useState(initialColor)
   const [exercises, setExercises] = useState<ExerciseDraft[]>(
@@ -57,7 +60,7 @@ export function WorkoutForm({
       return
     }
 
-    const parsed = parseExerciseDrafts(exercises)
+    const parsed = parseExerciseDrafts(exercises, weightUnit)
     if (parsed.length === 0) {
       setError('Adicione pelo menos um exercício válido (nome, séries e reps).')
       return
@@ -158,7 +161,7 @@ export function WorkoutForm({
                     />
                   </div>
                   <div>
-                    <label className={labelClass}>Peso (kg)</label>
+                    <label className={labelClass}>{weightFieldLabel(weightUnit)}</label>
                     <input
                       type="number"
                       inputMode="decimal"
